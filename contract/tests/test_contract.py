@@ -712,24 +712,24 @@ class TestContract(TestContractBase):
         """
 
         def error_message(
-            date_start,
-            recurring_invoicing_type,
-            recurring_invoicing_offset,
-            recurring_rule_type,
-            recurring_interval,
-            max_date_end,
+                date_start,
+                recurring_invoicing_type,
+                recurring_invoicing_offset,
+                recurring_rule_type,
+                recurring_interval,
+                max_date_end,
         ):
             return (
-                "Error in %s-%d every %d %s case, "
-                "start with %s (max_date_end=%s)"
-                % (
-                    recurring_invoicing_type,
-                    recurring_invoicing_offset,
-                    recurring_interval,
-                    recurring_rule_type,
-                    date_start,
-                    max_date_end,
-                )
+                    "Error in %s-%d every %d %s case, "
+                    "start with %s (max_date_end=%s)"
+                    % (
+                        recurring_invoicing_type,
+                        recurring_invoicing_offset,
+                        recurring_interval,
+                        recurring_rule_type,
+                        date_start,
+                        max_date_end,
+                    )
             )
 
         combinations = [
@@ -848,15 +848,15 @@ class TestContract(TestContractBase):
         """
 
         def _update_contract_line(
-            case,
-            date_start,
-            date_end,
-            last_date_invoiced,
-            recurring_next_date,
-            recurring_invoicing_type,
-            recurring_rule_type,
-            recurring_interval,
-            max_date_end,
+                case,
+                date_start,
+                date_end,
+                last_date_invoiced,
+                recurring_next_date,
+                recurring_invoicing_type,
+                recurring_rule_type,
+                recurring_interval,
+                max_date_end,
         ):
             self.acct_line.write(
                 {
@@ -878,27 +878,6 @@ class TestContract(TestContractBase):
             )
 
         def _error_message(
-            case,
-            date_start,
-            date_end,
-            last_date_invoiced,
-            recurring_next_date,
-            recurring_invoicing_type,
-            recurring_rule_type,
-            recurring_interval,
-            max_date_end,
-        ):
-            return (
-                "Error in case %s:"
-                "date_start: %s, "
-                "date_end: %s, "
-                "last_date_invoiced: %s, "
-                "recurring_next_date: %s, "
-                "recurring_invoicing_type: %s, "
-                "recurring_rule_type: %s, "
-                "recurring_interval: %s, "
-                "max_date_end: %s, "
-            ) % (
                 case,
                 date_start,
                 date_end,
@@ -908,7 +887,28 @@ class TestContract(TestContractBase):
                 recurring_rule_type,
                 recurring_interval,
                 max_date_end,
-            )
+        ):
+            return (
+                       "Error in case %s:"
+                       "date_start: %s, "
+                       "date_end: %s, "
+                       "last_date_invoiced: %s, "
+                       "recurring_next_date: %s, "
+                       "recurring_invoicing_type: %s, "
+                       "recurring_rule_type: %s, "
+                       "recurring_interval: %s, "
+                       "max_date_end: %s, "
+                   ) % (
+                       case,
+                       date_start,
+                       date_end,
+                       last_date_invoiced,
+                       recurring_next_date,
+                       recurring_invoicing_type,
+                       recurring_rule_type,
+                       recurring_interval,
+                       max_date_end,
+                   )
 
         Result = namedtuple(
             "Result",
@@ -1281,7 +1281,7 @@ class TestContract(TestContractBase):
         )
         self.assertTrue(new_line)
         new_date_end = (
-            suspension_end + (end_date - suspension_start) + relativedelta(days=1)
+                suspension_end + (end_date - suspension_start) + relativedelta(days=1)
         )
         self.assertEqual(new_line.date_start, suspension_end + relativedelta(days=1))
         self.assertEqual(new_line.date_end, new_date_end)
@@ -1316,7 +1316,7 @@ class TestContract(TestContractBase):
         )
         self.assertTrue(new_line)
         new_date_end = (
-            end_date + (suspension_end - suspension_start) + relativedelta(days=1)
+                end_date + (suspension_end - suspension_start) + relativedelta(days=1)
         )
         self.assertEqual(new_line.date_start, suspension_end + relativedelta(days=1))
         self.assertEqual(new_line.date_end, new_date_end)
@@ -2132,7 +2132,7 @@ class TestContract(TestContractBase):
             self.acct_line.write(
                 {
                     "last_date_invoiced": self.acct_line.date_start
-                    - relativedelta(days=1)
+                                          - relativedelta(days=1)
                 }
             )
 
@@ -2403,6 +2403,14 @@ class TestContract(TestContractBase):
         action = self.contract.action_preview()
         self.assertIn("/my/contracts/", action["url"])
         self.assertIn("access_token=", action["url"])
+
+    def test_contract_line_termination(self):
+        """Don't fail when the line receives an end date."""
+        self.contract.recurring_create_invoice()
+        self.acct_line.date_end = "2018-02-14"
+        self.assertFalse(self.acct_line.recurring_next_date)
+        # This doesn't give any error
+        self.contract.recurring_create_invoice()
 
     def test_automatic_price_with_specific_uom(self):
         uom_hour = self.env.ref("uom.product_uom_hour")

@@ -617,6 +617,8 @@ class ContractContract(models.Model):
 
     def _recurring_create_invoice(self, date_ref=False):
         invoices_values = self._prepare_recurring_invoices_values(date_ref)
+        if not invoices_values:
+            return None
         moves = self.env["account.move"].create(invoices_values)
         self._add_contract_origin(moves)
         self._invoice_followers(moves)

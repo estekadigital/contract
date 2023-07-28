@@ -576,6 +576,8 @@ class ContractLine(models.Model):
         dates = self._get_period_to_invoice(
             self.last_date_invoiced, self.recurring_next_date
         )
+        if not all(dates):
+            return None
         line_form = move_form.invoice_line_ids.new()
         line_form.display_type = self.display_type
         line_form.product_id = self.product_id
@@ -660,7 +662,7 @@ class ContractLine(models.Model):
 
     def _update_recurring_next_date(self):
         for rec in self:
-            last_date_invoiced = rec.next_period_date_end
+            last_date_invoiced = rec.next_period_date_end if rec.next_period_date_end else self.last_date_invoiced
             recurring_next_date = rec.get_next_invoice_date(
                  last_date_invoiced + relativedelta(days=1),
                  rec.recurring_invoicing_type,

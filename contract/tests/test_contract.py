@@ -7,6 +7,7 @@ from collections import namedtuple
 from datetime import timedelta
 
 from dateutil.relativedelta import relativedelta
+from freezegun import freeze_time
 
 from odoo import fields
 from odoo.exceptions import UserError, ValidationError
@@ -149,7 +150,7 @@ class TestContractBase(common.SavepointCase):
                         0,
                         {
                             "product_id": False,
-                            "name": "Header for Services",
+                            "name": "Header for #INVOICEMONTHNAME# Services",
                             "display_type": "line_section",
                         },
                     ),
@@ -2210,8 +2211,21 @@ class TestContract(TestContractBase):
         parent_partner = self.env["res.partner"].create(
             {"name": "parent partner", "is_company": True}
         )
+        journal2 = self.env["account.journal"].create(
+            {
+                "name": "Test journal Company2",
+                "code": "VTC2",
+                "type": "sale",
+                "company_id": company2.id,
+            }
+        )
         # Assume contract 2 is for company 2
-        self.contract2.company_id = company2
+        self.contract2.write(
+            {
+                "company_id": company2.id,
+                "journal_id": journal2.id,
+            }
+        )
         # Update the partner attached to both contracts
         self.partner.with_user(unprivileged_user).with_company(company2).with_context(
             company_id=company2.id
@@ -2324,6 +2338,40 @@ class TestContract(TestContractBase):
         self.assertFalse(self.contract.terminate_reason_id)
         self.assertFalse(self.contract.terminate_comment)
 
+    def test_action_terminate_contract_check_recurring_dates(self):
+        """
+        The use case here is to use a contract with recurrence on its level.
+
+        Create a first invoice
+        Then, terminate it => Lines should have a end_date
+        Then, create a new invoice (the last one).
+        The recurring next date should be False.
+        """
+        group_can_terminate_contract = self.env.ref("contract.can_terminate_contract")
+        group_can_terminate_contract.users |= self.env.user
+        self.contract3.contract_line_ids.write({"date_start": "2018-03-01"})
+        self.contract3.recurring_create_invoice()
+        self.assertEqual(to_date("2018-04-01"), self.contract3.recurring_next_date)
+
+        action = self.contract3.action_terminate_contract()
+        wizard = (
+            self.env[action["res_model"]]
+            .with_context(action["context"])
+            .create(
+                {
+                    "terminate_date": "2018-04-02",
+                    "terminate_reason_id": self.terminate_reason.id,
+                    "terminate_comment": "terminate_comment",
+                }
+            )
+        )
+        wizard.terminate_contract()
+        # This is the last invoice
+        self.contract3.recurring_create_invoice()
+
+        # Recurring next date should be False
+        self.assertFalse(self.contract3.recurring_next_date)
+
     def test_terminate_date_before_last_date_invoiced(self):
         self.contract.recurring_create_invoice()
         self.assertEqual(self.acct_line.last_date_invoiced, to_date("2018-02-14"))
@@ -2336,6 +2384,7 @@ class TestContract(TestContractBase):
                 to_date("2018-02-13"),
             )
 
+    @freeze_time("2020-01-01 00:00:00")
     def test_recurrency_propagation(self):
         # Existing contract
         vals = {
@@ -2376,6 +2425,7 @@ class TestContract(TestContractBase):
                 "code": "TCAD",
                 "type": "sale",
                 "currency_id": currency_cad.id,
+                "company_id": self.contract2.company_id.id,
             }
         )
         self.contract2.journal_id = journal.id
@@ -2425,3 +2475,11 @@ class TestContract(TestContractBase):
         self.acct_line.uom_id = uom_day.id
         self.acct_line.refresh()
         self.assertEqual(self.acct_line.price_unit, 30.75 * 8)
+
+    @freeze_time("2023-05-01")
+    def test_check_month_name_marker(self):
+        """Set fixed date to check test correctly."""
+        self.contract3.contract_line_ids.date_start = fields.Date.today()
+        self.contract3.contract_line_ids.recurring_next_date = fields.Date.today()
+        invoice_id = self.contract3.recurring_create_invoice()
+        self.assertEqual(invoice_id.invoice_line_ids[0].name, "Header for May Services")

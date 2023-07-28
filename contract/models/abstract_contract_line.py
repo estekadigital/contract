@@ -39,6 +39,7 @@ class ContractAbstractContractLine(models.AbstractModel):
         string="Unit Price",
         compute="_compute_price_unit",
         inverse="_inverse_price_unit",
+        digits="Product Price",
     )
     price_subtotal = fields.Float(
         compute="_compute_price_subtotal",
@@ -163,11 +164,6 @@ class ContractAbstractContractLine(models.AbstractModel):
     @api.depends("contract_id.date_start", "contract_id.line_recurrence")
     def _compute_date_start(self):
         self._set_recurrence_field("date_start")
-
-    @api.depends("contract_id.recurring_next_date", "contract_id.line_recurrence")
-    def _compute_recurring_next_date(self):
-        super()._compute_recurring_next_date()
-        self._set_recurrence_field("recurring_next_date")
 
     @api.depends("display_type", "note_invoicing_mode")
     def _compute_is_recurring_note(self):

@@ -95,6 +95,11 @@ msgid "Tier Definition"
 msgstr "Definición de Nivel"
 
 #. module: agreement_tier_validation
+#: model:ir.model.fields,field_description:agreement_tier_validation.field_agreement__tier_validation_before_write
+msgid "Tier Validation Before Write"
+msgstr ""
+
+#. module: agreement_tier_validation
 #: model:ir.model.fields,field_description:agreement_tier_validation.field_agreement__to_validate_message
 msgid "To Validate Message"
 msgstr "Mensaje A Validar"
@@ -109,6 +114,11 @@ msgstr "Validado"
 #: model:ir.model.fields,field_description:agreement_tier_validation.field_agreement__validated_message
 msgid "Validated Message"
 msgstr "Mensaje Validado"
+
+#. module: agreement_tier_validation
+#: model:ir.model.fields,field_description:agreement_tier_validation.field_agreement__validation_status
+msgid "Validation Status"
+msgstr ""
 
 #. module: agreement_tier_validation
 #: model:ir.model.fields,field_description:agreement_tier_validation.field_agreement__review_ids
